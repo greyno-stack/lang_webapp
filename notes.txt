@@ -1,0 +1,3 @@
+pnpm --filter @app/api dev
+pnpm --filter @app/web dev
+
