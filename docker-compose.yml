@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:17
+    container_name: lang_app_db
+    environment:
+      POSTGRES_USER: lang_user
+      POSTGRES_PASSWORD: lang_pass
+      POSTGRES_DB: lang_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:

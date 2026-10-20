@@ -128,88 +128,167 @@ POST /api/answers
 
 ---
 
-## Build roadmap (proposed)
+## Build roadmap
 
 Principle: build in thin vertical slices (DB → API → UI for one feature at a time), keep
-the app runnable after every phase, and deploy early. Each phase ends with a commit/PR.
+the app runnable after every step, and deploy early.
 
-### Phase 0: Repo foundation
+How to use this list:
 
-- git + GitHub repo, pnpm workspace, shared base tsconfig (strict mode)
-- apps/api: Express "GET /api/health"; apps/web: Vite React page that calls it
-- packages/shared wired into both apps (prove a shared type/Zod schema imports cleanly)
-- ESLint + Prettier, GitHub Actions running lint + type-check
-- Done when: one command runs both apps locally and CI is green
-- Status (2026-10-16): built and verified locally (`pnpm dev`, lint, type-check, build all
-  pass). Remaining: first commit, push to GitHub, confirm CI is green.
-- Decisions made:
-  - Package scope `@app/*` (`@app/shared`, `@app/api`, `@app/web`); rename once the title is set
-  - ESM everywhere, `moduleResolution: "Bundler"`, strict TS + `noUncheckedIndexedAccess`
-  - `@app/shared` ships raw `.ts` (no build step); Vite compiles it for web, tsup bundles it
-    into the API build, tsx runs it in API dev
-  - Dev: Vite proxies `/api` to Express on :3000, so there's no CORS in development
-  - ESLint 9 flat config with type-aware typescript-eslint rules
-  - Tailwind, React Router and React Query are deferred until the phases that need them
+- Each step is small enough to build, check and commit on its own (one step ≈ one commit).
+- Steps are numbered (e.g. 1.3) so they can be referred to in discussion.
+- Add, remove, reorder or reword steps freely; this is a plan, not a contract.
+- `[x]` = done, `[ ]` = not started. Later phases are less detailed and get broken down
+  further when we reach them.
+
+### Phase 0: Repo foundation ✅
+
+- [x] 0.1 pnpm workspace + root scripts (`dev`, `build`, `lint`, `typecheck`, `format`)
+- [x] 0.2 Shared strict `tsconfig.base.json`
+- [x] 0.3 `packages/shared` with the first Zod schema (`healthResponseSchema`)
+- [x] 0.4 `apps/api`: Express `GET /api/health` (tsx for dev, tsup for build)
+- [x] 0.5 `apps/web`: Vite + React page that calls the health endpoint through the dev proxy
+- [x] 0.6 ESLint (type-aware) + Prettier
+- [x] 0.7 GitHub Actions CI: format check, lint, type-check, build
+- [x] 0.8 Move the project out of OneDrive to `C:\dev\lang_app`
+- [x] 0.9 Public GitHub repo (`greyno-stack/lang_webapp`), first push
+- [ ] 0.10 CI green on GitHub (README encoding fix pushed)
+
+Decisions made:
+
+- Package scope `@app/*` (`@app/shared`, `@app/api`, `@app/web`); rename once the title is set
+- ESM everywhere, `moduleResolution: "Bundler"`, strict TS + `noUncheckedIndexedAccess`
+- `@app/shared` ships raw `.ts` (no build step); Vite compiles it for web, tsup bundles it
+  into the API build, tsx runs it in API dev
+- Dev: Vite proxies `/api` to Express on :3000, so there's no CORS in development
+- ESLint 9 flat config with type-aware typescript-eslint rules
+- Tailwind, React Router and React Query are deferred until the steps that need them
 
 ### Phase 1: Database
 
-- Docker Compose Postgres, Prisma setup
-- Initial schema: User, Question (level, type, payload), UserProgress
-- Seed script with ~20 hand-written A1 multiple-choice questions
-- Done when: `prisma migrate` + seed works from a clean clone
+Goal: a real PostgreSQL database running locally, with tables defined in code and some
+starter questions in it. The API can read from it.
 
-### Phase 2: Auth (vertical slice)
+- [ ] 1.1 Install Docker Desktop (with WSL 2) and confirm `docker compose version` works
+- [ ] 1.2 `docker-compose.yml` at the root that runs Postgres, with a named volume so data
+      survives restarts; root scripts `db:up` / `db:down`
+- [ ] 1.3 `.env.example` (committed, no real secrets) + `.env` (gitignored) holding
+      `DATABASE_URL`
+- [ ] 1.4 Add Prisma to `apps/api` (`prisma` + `@prisma/client`), `prisma.config.ts`,
+      empty `schema.prisma` pointing at `DATABASE_URL`
+- [ ] 1.5 First models in `schema.prisma`: `User` (email, passwordHash, role, xp, level,
+      timestamps) and a `Role` enum (`LEARNER`, `ADMIN`)
+- [ ] 1.6 `Question` model: level (1–6), type, prompt, payload (JSON), answer data,
+      timestamps; `QuestionType` enum starting with `MULTIPLE_CHOICE`
+- [ ] 1.7 `UserAnswer` model (who answered what, correct or not, XP earned, when) to record
+      progress
+- [ ] 1.8 First migration (`prisma migrate dev`), look at the generated SQL to learn what
+      Prisma does
+- [ ] 1.9 Zod schema for the multiple-choice payload in `packages/shared`, as the first
+      variant of a discriminated union (other question types plug in later)
+- [ ] 1.10 Seed script: ~20 hand-written A1 multiple-choice questions, validated with the
+      Zod schema before insert; root script `db:seed`
+- [ ] 1.11 Prisma client module in the API (one shared instance) + `/api/health` reports
+      whether the database is reachable
+- [ ] 1.12 Read-only endpoint `GET /api/questions?level=1` that returns questions without
+      their answers (temporary, to prove the DB → API → web path)
+- [ ] 1.13 CI: generate the Prisma client and run `prisma validate` so schema mistakes fail
+      the build
+- [ ] 1.14 README "Getting started" section: clone → `pnpm install` → `db:up` → migrate →
+      seed → `pnpm dev`; test it from a clean clone
 
-- API: signup, login, logout, GET /api/me; bcrypt, JWT in httpOnly cookie, auth middleware
-- Web: signup/login pages, auth state via React Query (`/me`), protected routes
-- Vitest tests for auth routes
-- Done when: a user can sign up, refresh the page, and still be logged in
+Done when: someone can clone the repo, follow the README, and see seeded questions come
+back from the API.
 
-### Phase 3: Core quiz loop (multiple choice only)
+### Phase 2: Auth
 
-- GET questions for a level, POST /api/answers (score server-side, award XP)
-- Never send correct answers to the client before submission
-- Web: quiz page, feedback after each answer, XP display
-- Done when: a logged-in user can answer A1 questions and XP persists
+- [ ] 2.1 Shared Zod schemas: signup and login request bodies
+- [ ] 2.2 Password hashing helper (bcrypt) + unit tests (Vitest set up here)
+- [ ] 2.3 `POST /api/auth/signup`: validate, hash, create user
+- [ ] 2.4 `POST /api/auth/login`: verify password, set JWT in an httpOnly cookie
+- [ ] 2.5 Auth middleware: read the cookie, verify the JWT, attach the user to the request
+- [ ] 2.6 `GET /api/me` and `POST /api/auth/logout`
+- [ ] 2.7 Role middleware (`requireRole('ADMIN')`)
+- [ ] 2.8 API route tests for signup/login/me (Supertest + a test database); add tests to CI
+- [ ] 2.9 Web: add React Router and React Query
+- [ ] 2.10 Web: signup and login pages
+- [ ] 2.11 Web: `useMe()` hook, protected routes, logout button
 
-### Phase 4: Progression + main menu
+Done when: a user can sign up, refresh the page, and still be logged in.
 
-- XP thresholds, level-up and unlock logic (unit-tested pure functions)
-- Card-grid main menu with locked/unlocked states
-- Done when: earning enough XP visibly unlocks the next card. This is the MVP.
+### Phase 3: Core quiz loop (multiple choice)
+
+- [ ] 3.1 Shared schemas: question as sent to the client (no answer), answer submission,
+      answer result
+- [ ] 3.2 `GET /api/questions` for the user's level (never includes correct answers)
+- [ ] 3.3 `POST /api/answers`: score on the server, record `UserAnswer`, award XP
+- [ ] 3.4 Tests for scoring and XP awarding
+- [ ] 3.5 Web: add Tailwind
+- [ ] 3.6 Web: quiz page showing one question at a time
+- [ ] 3.7 Web: feedback after each answer (correct/incorrect, XP gained)
+- [ ] 3.8 Web: XP shown in the header, updated after each answer
+
+Done when: a logged-in user can answer A1 questions and their XP persists.
+
+### Phase 4: Progression + main menu (MVP)
+
+- [ ] 4.1 Decide XP rules and unlock thresholds (record them in this spec)
+- [ ] 4.2 Pure functions for level-up and unlocks, with unit tests
+- [ ] 4.3 Apply level-up in `POST /api/answers`; response includes `unlocked`
+- [ ] 4.4 `GET /api/progress` (level, XP, XP to next level, unlocked cards)
+- [ ] 4.5 Web: card-grid main menu with locked/unlocked states
+- [ ] 4.6 Web: level-up/unlock feedback when a card unlocks
+
+Done when: earning enough XP visibly unlocks the next card. This is the MVP.
 
 ### Phase 5: Deploy the MVP
 
-- API + DB on Render/Railway, frontend on Vercel/Netlify, env vars, prod migrations
-- Watch for cross-site cookie issues (frontend and API on different domains): either
-  SameSite=None; Secure + CORS credentials, or proxy /api through the frontend host
-- Done when: a live URL works end to end
+- [ ] 5.1 Production config: env variable checks on startup, CORS, cookie settings
+- [ ] 5.2 Hosted Postgres + API on Render or Railway; run migrations on deploy
+- [ ] 5.3 Frontend on Vercel or Netlify
+- [ ] 5.4 Solve cross-site cookies (SameSite=None; Secure + CORS credentials, or proxy
+      `/api` through the frontend host)
+- [ ] 5.5 Continuous deployment: deploy only after CI passes on `main`
+- [ ] 5.6 Seed production with starter questions; smoke-test the live site
+
+Done when: a live URL works end to end.
 
 ### Phase 6: More question types
 
-- Typed translation, fill-in-the-blank, word tiles, matching (one at a time)
-- Add each as a new variant of the Zod discriminated union + a React component
+- [ ] 6.1 Typed translation
+- [ ] 6.2 Fill-in-the-blank
+- [ ] 6.3 Sentence building (word tiles)
+- [ ] 6.4 Matching pairs
+- [ ] 6.5 Listening (audio/TTS), optional
+
+Each one: new variant in the shared Zod union + scoring on the server + a React component.
 
 ### Phase 7: Admin panel
 
-- Role-based route protection, CRUD for questions with validation
+- [ ] 7.1 Admin-only routes (API + web)
+- [ ] 7.2 Question list with filters (level, type)
+- [ ] 7.3 Create/edit/delete questions with validation per question type
 
 ### Phase 8: Content growth
 
-- Sub-tiers/units, expand question bank across levels
+- [ ] 8.1 Decide on sub-tiers/units within levels and the content source
+- [ ] 8.2 Units in the schema and the main menu
+- [ ] 8.3 Expand the question bank across all levels
 
 ### Phase 9: Spaced repetition (SM-2)
 
-- Review queue per user, scheduling stored per user/question
+- [ ] 9.1 SM-2 scheduling as a pure, tested function
+- [ ] 9.2 Per-user review schedule stored in the DB
+- [ ] 9.3 Review queue page
 
 ### Phase 10: Polish for resume
 
-- Playwright E2E for signup → quiz → unlock
-- README: live demo link, demo account, architecture diagram, screenshots
-- Optional: Dockerize the full app
+- [ ] 10.1 Playwright E2E test: signup → quiz → unlock, run in CI
+- [ ] 10.2 README: live demo link, demo account, architecture diagram, screenshots
+- [ ] 10.3 Optional: Dockerize the full app
 
 ## Next step
 
-Finish Phase 0 (commit, push to GitHub, green CI), then Phase 1 (Docker Compose Postgres +
-Prisma). Question-type decision can be deferred: MVP uses multiple choice, with the schema
-designed to add more types later.
+Push the README fix (0.10), then start Phase 1 at step 1.1. The question-type decision
+can still be deferred: the MVP uses multiple choice, and the schema is designed to add more
+types later.
