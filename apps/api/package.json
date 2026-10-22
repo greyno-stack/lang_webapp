@@ -11,11 +11,14 @@
   },
   "dependencies": {
     "@app/shared": "workspace:*",
+    "@prisma/client": "^7.10.1",
+    "dotenv": "^18.0.8",
     "express": "^5.1.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^22.18.0",
+    "prisma": "^7.10.1",
     "tsup": "^8.5.0",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0"
