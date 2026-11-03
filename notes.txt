@@ -1,6 +1,0 @@
-pnpm --filter @app/api dev
-pnpm --filter @app/web dev
-
-pnpm format:check, pnpm format
-
-pnpm format:check && pnpm lint && pnpm typecheck && pnpm build

@@ -93,6 +93,34 @@ written yet. Keep maintaining and updating this spec sheet as decisions are made
 - Large question bank
 - Each question tagged to a proficiency level (and later a sub-tier/unit)
 
+## Question types (DECIDED 2026-10-21)
+
+Two typed-answer question types. No multiple choice.
+
+- **Vocabulary**: the user sees a single word and types its meaning.
+  Example: `kumain` → "ate" / "eat"
+- **Translation**: the user sees a full sentence and types its translation.
+  Example: `Kumain ako ng kanin.` → "I ate rice."
+
+Every question is **invertible**. Each one stores both a Tagalog side and an English side,
+so it can be asked in either direction:
+
+- Tagalog → English (the default): show the Tagalog, the user types English
+- English → Tagalog: show the English, the user types Tagalog
+- Users pick the direction in their settings (built later, in Phase 6). Until then,
+  everything is Tagalog → English.
+
+Data per question: `tagalog` and `english` (the main forms) plus `tagalogAlternates` and
+`englishAlternates` (other accepted answers, e.g. "ate" / "eat" / "have eaten").
+Both types use the same fields, so they're regular columns rather than JSON.
+
+Answer checking (server-side only; the browser never receives the answers):
+
+- Normalize before comparing: lowercase, trim, collapse spaces, ignore final punctuation
+- Correct if the normalized response matches the main form or any alternate
+- Store what the user typed (`UserAnswer.response`) so wrong answers can be reviewed, and
+  missing valid alternates can be spotted and added
+
 ## UI
 
 - Main menu: grid of clickable cards
@@ -117,12 +145,12 @@ POST /api/answers
 
 ## Open questions (to decide next)
 
-- Question types: multiple choice, typed translation, fill-in-the-blank,
-  listening (audio/TTS), sentence building (word tiles), matching pairs?
-  - Proposed: MVP ships multiple choice only. Schema stores a `type` discriminator plus a
-    JSON payload validated by a Zod discriminated union in packages/shared, so new types
-    can be added later without a migration per type.
-- XP rules and unlock thresholds
+- How lenient should translation checking be? Sentences have many valid translations.
+  Start with exact match against alternates; later options: typo tolerance (edit distance),
+  ignoring articles, or AI-assisted grading
+- Tagalog-side normalization for English → Tagalog: ignore accent marks? Accept common
+  spelling variants?
+- XP rules and unlock thresholds (e.g. should Translation give more XP than Vocabulary?)
 - Sub-tiers/units within each level?
 - Content source: hand-written, AI-generated + human-reviewed, or imported?
 
@@ -152,7 +180,7 @@ How to use this list:
 - [x] 0.7 GitHub Actions CI: format check, lint, type-check, build
 - [x] 0.8 Move the project out of OneDrive to `C:\dev\lang_app`
 - [x] 0.9 Public GitHub repo (`greyno-stack/lang_webapp`), first push
-- [ ] 0.10 CI green on GitHub (README encoding fix pushed)
+- [x] 0.10 CI green on GitHub (README encoding fix pushed)
 
 Decisions made:
 
@@ -169,25 +197,25 @@ Decisions made:
 Goal: a real PostgreSQL database running locally, with tables defined in code and some
 starter questions in it. The API can read from it.
 
-- [ ] 1.1 Install Docker Desktop (with WSL 2) and confirm `docker compose version` works
-- [ ] 1.2 `docker-compose.yml` at the root that runs Postgres, with a named volume so data
+- [x] 1.1 Install Docker Desktop (with WSL 2) and confirm `docker compose version` works
+- [x] 1.2 `docker-compose.yml` at the root that runs Postgres, with a named volume so data
       survives restarts; root scripts `db:up` / `db:down`
-- [ ] 1.3 `.env.example` (committed, no real secrets) + `.env` (gitignored) holding
+- [x] 1.3 `.env.example` (committed, no real secrets) + `.env` (gitignored) holding
       `DATABASE_URL`
-- [ ] 1.4 Add Prisma to `apps/api` (`prisma` + `@prisma/client`), `prisma.config.ts`,
+- [x] 1.4 Add Prisma to `apps/api` (`prisma` + `@prisma/client`), `prisma.config.ts`,
       empty `schema.prisma` pointing at `DATABASE_URL`
-- [ ] 1.5 First models in `schema.prisma`: `User` (email, passwordHash, role, xp, level,
+- [x] 1.5 First models in `schema.prisma`: `User` (email, passwordHash, role, xp, level,
       timestamps) and a `Role` enum (`LEARNER`, `ADMIN`)
-- [ ] 1.6 `Question` model: level (1–6), type, prompt, payload (JSON), answer data,
-      timestamps; `QuestionType` enum starting with `MULTIPLE_CHOICE`
-- [ ] 1.7 `UserAnswer` model (who answered what, correct or not, XP earned, when) to record
-      progress
+- [x] 1.6 `Question` model: level (1–6), type, `tagalog`, `english`, alternates for each,
+      XP reward, timestamps; `QuestionType` enum (`VOCABULARY`, `TRANSLATION`)
+- [x] 1.7 `UserAnswer` model (who answered what, what they typed, correct or not, XP
+      earned, when) to record progress
 - [ ] 1.8 First migration (`prisma migrate dev`), look at the generated SQL to learn what
       Prisma does
-- [ ] 1.9 Zod schema for the multiple-choice payload in `packages/shared`, as the first
-      variant of a discriminated union (other question types plug in later)
-- [ ] 1.10 Seed script: ~20 hand-written A1 multiple-choice questions, validated with the
-      Zod schema before insert; root script `db:seed`
+- [ ] 1.9 Zod schema for question content in `packages/shared` (level 1–6, type, non-empty
+      `tagalog`/`english`, alternates); reused later by the admin panel
+- [ ] 1.10 Seed script: ~20 hand-written A1 questions (mostly Vocabulary, a few simple
+      Translation), validated with the Zod schema before insert; root script `db:seed`
 - [ ] 1.11 Prisma client module in the API (one shared instance) + `/api/health` reports
       whether the database is reachable
 - [ ] 1.12 Read-only endpoint `GET /api/questions?level=1` that returns questions without
@@ -199,6 +227,20 @@ starter questions in it. The API can read from it.
 
 Done when: someone can clone the repo, follow the README, and see seeded questions come
 back from the API.
+
+Decisions made:
+
+- Postgres 17 in Docker Compose; local-only credentials in `docker-compose.yml` and
+  `apps/api/.env` (`.env.example` committed as the template)
+- Prisma pinned to `^7.10.1` (npm `latest` points at a Prisma 8 release candidate)
+- Prisma 7 setup: `prisma-client` generator writing to `apps/api/src/generated/prisma`
+  (gitignored, Prettier- and ESLint-ignored); DB URL in `prisma.config.ts` via `dotenv`
+- Files created by hand instead of `prisma init` (init adds AI-assistant folders we don't want)
+- IDs are `cuid()` strings; levels are integers 1–6 (easy to compare for unlocks)
+- Questions store both languages as plain columns (`tagalog`, `english`) plus `String[]`
+  alternates (Postgres arrays). This replaced an earlier JSON `payload`/`answer` design that
+  was planned for multiple choice
+- `UserAnswer.response` stores what the user typed
 
 ### Phase 2: Auth
 
@@ -216,16 +258,18 @@ back from the API.
 
 Done when: a user can sign up, refresh the page, and still be logged in.
 
-### Phase 3: Core quiz loop (multiple choice)
+### Phase 3: Core quiz loop (Tagalog → English)
 
-- [ ] 3.1 Shared schemas: question as sent to the client (no answer), answer submission,
-      answer result
-- [ ] 3.2 `GET /api/questions` for the user's level (never includes correct answers)
-- [ ] 3.3 `POST /api/answers`: score on the server, record `UserAnswer`, award XP
-- [ ] 3.4 Tests for scoring and XP awarding
+- [ ] 3.1 Shared schemas: question as sent to the client (Tagalog side only, no answers),
+      answer submission (question ID + typed text), answer result
+- [ ] 3.2 Answer-checking function (normalize + match against main form and alternates),
+      with unit tests covering case, spacing, punctuation and alternates
+- [ ] 3.3 `GET /api/questions` for the user's level (never includes the English side)
+- [ ] 3.4 `POST /api/answers`: check on the server, record `UserAnswer` (with the
+      response), award XP
 - [ ] 3.5 Web: add Tailwind
-- [ ] 3.6 Web: quiz page showing one question at a time
-- [ ] 3.7 Web: feedback after each answer (correct/incorrect, XP gained)
+- [ ] 3.6 Web: quiz page showing one question at a time with a text input
+- [ ] 3.7 Web: feedback after each answer (correct/incorrect, the expected answer, XP gained)
 - [ ] 3.8 Web: XP shown in the header, updated after each answer
 
 Done when: a logged-in user can answer A1 questions and their XP persists.
@@ -253,15 +297,17 @@ Done when: earning enough XP visibly unlocks the next card. This is the MVP.
 
 Done when: a live URL works end to end.
 
-### Phase 6: More question types
+### Phase 6: Question direction (Tagalog ↔ English)
 
-- [ ] 6.1 Typed translation
-- [ ] 6.2 Fill-in-the-blank
-- [ ] 6.3 Sentence building (word tiles)
-- [ ] 6.4 Matching pairs
-- [ ] 6.5 Listening (audio/TTS), optional
+- [ ] 6.1 `Direction` enum (`TL_TO_EN`, `EN_TO_TL`) + user setting `questionDirection`
+      (default `TL_TO_EN`); migration
+- [ ] 6.2 Record the direction on each `UserAnswer`
+- [ ] 6.3 API: show the side matching the user's direction and check against the other side
+- [ ] 6.4 Tagalog-side answer checking (accent marks, spelling variants) with tests
+- [ ] 6.5 Web: settings page with the direction toggle
 
-Each one: new variant in the shared Zod union + scoring on the server + a React component.
+Ideas for later question types (not planned): fill-in-the-blank, listening (audio/TTS),
+sentence building (word tiles), matching pairs.
 
 ### Phase 7: Admin panel
 
@@ -289,6 +335,6 @@ Each one: new variant in the shared Zod union + scoring on the server + a React 
 
 ## Next step
 
-Push the README fix (0.10), then start Phase 1 at step 1.1. The question-type decision
-can still be deferred: the MVP uses multiple choice, and the schema is designed to add more
-types later.
+Phase 1, step 1.8: the first migration (`prisma migrate dev`), which creates the `User`,
+`Question` and `UserAnswer` tables in the local database. Choosing a direction is deferred
+to Phase 6; until then, questions are asked Tagalog → English.

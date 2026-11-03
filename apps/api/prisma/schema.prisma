@@ -12,13 +12,51 @@ enum Role {
   ADMIN
 }
 
+enum QuestionType {
+  VOCABULARY
+  TRANSLATION
+}
+
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String       @id @default(cuid())
+  email        String       @unique
   passwordHash String
-  role         Role     @default(LEARNER)
-  xp           Int      @default(0)
-  level        Int      @default(1)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  role         Role         @default(LEARNER)
+  xp           Int          @default(0)
+  level        Int          @default(1)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  answers      UserAnswer[]
+}
+
+model Question {
+  id                String       @id @default(cuid())
+  level             Int
+  type              QuestionType
+  tagalog           String
+  english           String
+  tagalogAlternates String[]
+  englishAlternates String[]
+  xpReward          Int          @default(10)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  answers           UserAnswer[]
+
+  @@index([level])
+}
+
+model UserAnswer {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String
+  response   String
+  correct    Boolean
+  xpEarned   Int
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([questionId])
 }
