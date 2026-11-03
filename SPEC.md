@@ -210,7 +210,7 @@ starter questions in it. The API can read from it.
       XP reward, timestamps; `QuestionType` enum (`VOCABULARY`, `TRANSLATION`)
 - [x] 1.7 `UserAnswer` model (who answered what, what they typed, correct or not, XP
       earned, when) to record progress
-- [ ] 1.8 First migration (`prisma migrate dev`), look at the generated SQL to learn what
+- [x] 1.8 First migration (`prisma migrate dev`), look at the generated SQL to learn what
       Prisma does
 - [ ] 1.9 Zod schema for question content in `packages/shared` (level 1–6, type, non-empty
       `tagalog`/`english`, alternates); reused later by the admin panel
@@ -335,6 +335,6 @@ sentence building (word tiles), matching pairs.
 
 ## Next step
 
-Phase 1, step 1.8: the first migration (`prisma migrate dev`), which creates the `User`,
-`Question` and `UserAnswer` tables in the local database. Choosing a direction is deferred
+Phase 1, step 1.9: the shared Zod schema for question content in `packages/shared`, which
+the seed script (1.10) and later the admin panel use to validate questions. Choosing a direction is deferred
 to Phase 6; until then, questions are asked Tagalog → English.

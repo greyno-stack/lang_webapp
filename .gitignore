@@ -9,3 +9,4 @@ coverage/
 *.log
 apps/api/src/generated/
 notes.txt
+apps/api/src/scratch.ts
