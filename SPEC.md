@@ -214,7 +214,7 @@ starter questions in it. The API can read from it.
       Prisma does
 - [x] 1.9 Zod schema for question content in `packages/shared` (level 1–6, type, non-empty
       `tagalog`/`english`, alternates); reused later by the admin panel
-- [ ] 1.10 Seed script: ~20 hand-written A1 questions (mostly Vocabulary, a few simple
+- [x] 1.10 Seed script: ~20 hand-written A1 questions (mostly Vocabulary, a few simple
       Translation), validated with the Zod schema before insert; root script `db:seed`
 - [ ] 1.11 Prisma client module in the API (one shared instance) + `/api/health` reports
       whether the database is reachable
@@ -335,6 +335,6 @@ sentence building (word tiles), matching pairs.
 
 ## Next step
 
-Phase 1, step 1.10: the seed script that fills the database with ~20 A1 questions,
-validated with the shared Zod schema before insert. Choosing a direction is deferred
+Phase 1, step 1.13 (pulled forward): CI must run `prisma generate` before lint, because
+the seed script imports the generated client, which is gitignored. Then 1.11 and 1.12. Choosing a direction is deferred
 to Phase 6; until then, questions are asked Tagalog → English.

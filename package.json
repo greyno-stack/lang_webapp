@@ -15,7 +15,10 @@
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:seed": "pnpm --filter @app/api exec prisma db seed",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "db:validate": "pnpm --filter @app/api exec prisma validate",
+    "db:generate": "pnpm --filter @app/api exec prisma generate",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm build"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
