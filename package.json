@@ -14,6 +14,7 @@
     "format": "prettier --write .",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
+    "db:seed": "pnpm --filter @app/api exec prisma db seed",
     "format:check": "prettier --check ."
   },
   "devDependencies": {

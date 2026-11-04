@@ -10,3 +10,4 @@ coverage/
 apps/api/src/generated/
 notes.txt
 apps/api/src/scratch.ts
+CLAUDE.md
