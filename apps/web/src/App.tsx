@@ -6,7 +6,7 @@ type HealthState =
 
 async function fetchHealth(): Promise<HealthResponse> {
   const res = await fetch('/api/health');
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok && res.status !== 503) throw new Error(`HTTP ${res.status}`);
   // Validate at the boundary: if the API ever drifts from the shared schema, this throws.
   return healthResponseSchema.parse(await res.json());
 }
@@ -28,7 +28,8 @@ export function App() {
       {health.kind === 'loading' && <p>Checking API...</p>}
       {health.kind === 'ok' && (
         <p>
-          API status: <strong>{health.data.status}</strong> at {health.data.timestamp}
+          API status: <strong>{health.data.status}</strong>, database:{' '}
+          <strong>{health.data.database}</strong> at {health.data.timestamp}
         </p>
       )}
       {health.kind === 'error' && <p>API unreachable: {health.message}</p>}

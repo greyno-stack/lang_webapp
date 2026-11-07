@@ -220,7 +220,7 @@ starter questions in it. The API can read from it.
       whether the database is reachable
 - [ ] 1.12 Read-only endpoint `GET /api/questions?level=1` that returns questions without
       their answers (temporary, to prove the DB → API → web path)
-- [ ] 1.13 CI: generate the Prisma client and run `prisma validate` so schema mistakes fail
+- [x] 1.13 CI: generate the Prisma client and run `prisma validate` so schema mistakes fail
       the build
 - [ ] 1.14 README "Getting started" section: clone → `pnpm install` → `db:up` → migrate →
       seed → `pnpm dev`; test it from a clean clone
@@ -241,6 +241,11 @@ Decisions made:
   alternates (Postgres arrays). This replaced an earlier JSON `payload`/`answer` design that
   was planned for multiple choice
 - `UserAnswer.response` stores what the user typed
+- Prisma 7 connects through the `@prisma/adapter-pg` driver adapter; the API has one shared
+  client in `apps/api/src/db.ts`
+- API dev script is `node --watch --import tsx src/index.ts`: `tsx watch` hung on Windows
+  under `pnpm --parallel` (the root `pnpm dev`) once the API imported Prisma
+- `/api/health` returns `database: 'up' | 'down'`, with HTTP 503 when the database is down
 
 ### Phase 2: Auth
 
@@ -335,6 +340,7 @@ sentence building (word tiles), matching pairs.
 
 ## Next step
 
-Phase 1, step 1.13 (pulled forward): CI must run `prisma generate` before lint, because
-the seed script imports the generated client, which is gitignored. Then 1.11 and 1.12. Choosing a direction is deferred
+Phase 1, step 1.11: a shared Prisma client module in the API, and `/api/health` reporting
+whether the database is reachable. (1.13 was done early, because the seed script was the
+first code to import the generated client.) Choosing a direction is deferred
 to Phase 6; until then, questions are asked Tagalog → English.
