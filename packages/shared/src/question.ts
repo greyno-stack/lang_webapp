@@ -19,3 +19,20 @@ export const questionInputSchema = z.object({
 
 export type QuestionInput = z.input<typeof questionInputSchema>;
 export type QuestionContent = z.output<typeof questionInputSchema>;
+
+export const questionPromptSchema = z.object({
+  id: z.string(),
+  level: levelSchema,
+  type: questionTypeSchema,
+  tagalog: z.string(),
+});
+export type QuestionPrompt = z.infer<typeof questionPromptSchema>;
+
+export const questionListResponseSchema = z.object({
+  questions: z.array(questionPromptSchema),
+});
+export type QuestionListResponse = z.infer<typeof questionListResponseSchema>;
+
+export const questionListQuerySchema = z.object({
+  level: z.coerce.number().pipe(levelSchema),
+});

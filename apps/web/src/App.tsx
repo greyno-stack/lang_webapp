@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { healthResponseSchema, type HealthResponse } from '@app/shared';
+import { QuestionList } from './QuestionList';
 
 type HealthState =
   { kind: 'loading' } | { kind: 'ok'; data: HealthResponse } | { kind: 'error'; message: string };
@@ -33,6 +34,8 @@ export function App() {
         </p>
       )}
       {health.kind === 'error' && <p>API unreachable: {health.message}</p>}
+      <h2>Level 1 questions</h2>
+      <QuestionList />
     </main>
   );
 }

@@ -1,6 +1,10 @@
 import express from 'express';
-import type { HealthResponse } from '@app/shared';
 import { prisma } from './db.js';
+import {
+  questionListQuerySchema,
+  type HealthResponse,
+  type QuestionListResponse,
+} from '@app/shared';
 
 // Building the app separately from listen() lets tests import it without opening a port.
 export function createApp() {
@@ -21,6 +25,23 @@ export function createApp() {
       timestamp: new Date().toISOString(),
     };
     res.status(database === 'up' ? 200 : 503).json(body);
+  });
+
+  app.get('/api/questions', async (req, res) => {
+    const query = questionListQuerySchema.safeParse(req.query);
+    if (!query.success) {
+      res.status(400).json({ error: 'Invalid query', issues: query.error.issues });
+      return;
+    }
+
+    const questions = await prisma.question.findMany({
+      where: { level: query.data.level },
+      select: { id: true, level: true, type: true, tagalog: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const body: QuestionListResponse = { questions };
+    res.json(body);
   });
 
   return app;
