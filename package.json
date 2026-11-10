@@ -18,6 +18,7 @@
     "format:check": "prettier --check .",
     "db:validate": "pnpm --filter @app/api exec prisma validate",
     "db:generate": "pnpm --filter @app/api exec prisma generate",
+    "db:migrate": "pnpm --filter @app/api exec prisma migrate deploy",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm build"
   },
   "devDependencies": {
