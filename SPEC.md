@@ -222,7 +222,7 @@ starter questions in it. The API can read from it.
       their answers (temporary, to prove the DB → API → web path)
 - [x] 1.13 CI: generate the Prisma client and run `prisma validate` so schema mistakes fail
       the build
-- [ ] 1.14 README "Getting started" section: clone → `pnpm install` → `db:up` → migrate →
+- [x] 1.14 README "Getting started" section: clone → `pnpm install` → `db:up` → migrate →
       seed → `pnpm dev`; test it from a clean clone
 
 Done when: someone can clone the repo, follow the README, and see seeded questions come
@@ -249,7 +249,7 @@ Decisions made:
 
 ### Phase 2: Auth
 
-- [ ] 2.1 Shared Zod schemas: signup and login request bodies
+- [x] 2.1 Shared Zod schemas: signup and login request bodies
 - [ ] 2.2 Password hashing helper (bcrypt) + unit tests (Vitest set up here)
 - [ ] 2.3 `POST /api/auth/signup`: validate, hash, create user
 - [ ] 2.4 `POST /api/auth/login`: verify password, set JWT in an httpOnly cookie
@@ -262,6 +262,15 @@ Decisions made:
 - [ ] 2.11 Web: `useMe()` hook, protected routes, logout button
 
 Done when: a user can sign up, refresh the page, and still be logged in.
+
+Decisions made:
+
+- Emails are trimmed and lowercased before the format check
+  (`z.string().trim().toLowerCase().pipe(z.email())`), so each address maps to one account
+- Signup passwords are 8–72 characters (bcrypt uses only the first 72 bytes); login only
+  requires a non-empty password, so changing signup rules never locks out existing users
+- Passwords are hashed with `bcryptjs` (pure JS, same algorithm and hash format as `bcrypt`),
+  which avoids native builds that pnpm 10 blocks by default
 
 ### Phase 3: Core quiz loop (Tagalog → English)
 
@@ -340,7 +349,7 @@ sentence building (word tiles), matching pairs.
 
 ## Next step
 
-Phase 1, step 1.14: README "Getting started" (clone → install → `.env` → `db:up` →
-migrate → seed → `pnpm dev`), tested from a clean clone. This finishes Phase 1; Phase 2
-(auth) is next. Choosing a direction is deferred
+Phase 1 is done (clean-clone test passed 2026-11-10). Phase 2, steps 2.1–2.2: shared
+signup/login schemas, then the password hashing helper with Vitest set up for the first unit
+tests. Choosing a direction is deferred
 to Phase 6; until then, questions are asked Tagalog → English.
