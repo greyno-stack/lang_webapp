@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { levelSchema } from './question.js';
 
 const emailSchema = z.string().trim().toLowerCase().pipe(z.email());
 
@@ -15,3 +16,20 @@ export const loginRequestSchema = z.object({
 });
 
 export type LoginRequest = z.infer<typeof loginRequestSchema>;
+
+export const roleSchema = z.enum(['LEARNER', 'ADMIN']);
+
+export const publicUserSchema = z.object({
+  id: z.string(),
+  email: emailSchema,
+  role: roleSchema,
+  xp: z.nonnegative(),
+  level: levelSchema,
+});
+
+export const signupResponseSchema = z.object({
+  user: publicUserSchema,
+});
+
+export type PublicUser = z.infer<typeof publicUserSchema>;
+export type SignupResponse = z.infer<typeof signupResponseSchema>;

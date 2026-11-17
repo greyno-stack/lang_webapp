@@ -250,7 +250,7 @@ Decisions made:
 ### Phase 2: Auth
 
 - [x] 2.1 Shared Zod schemas: signup and login request bodies
-- [ ] 2.2 Password hashing helper (bcrypt) + unit tests (Vitest set up here)
+- [x] 2.2 Password hashing helper (bcrypt) + unit tests (Vitest set up here)
 - [ ] 2.3 `POST /api/auth/signup`: validate, hash, create user
 - [ ] 2.4 `POST /api/auth/login`: verify password, set JWT in an httpOnly cookie
 - [ ] 2.5 Auth middleware: read the cookie, verify the JWT, attach the user to the request
@@ -271,6 +271,10 @@ Decisions made:
   requires a non-empty password, so changing signup rules never locks out existing users
 - Passwords are hashed with `bcryptjs` (pure JS, same algorithm and hash format as `bcrypt`),
   which avoids native builds that pnpm 10 blocks by default
+- Unit tests use Vitest (`pnpm test` at the root runs every package's tests; CI runs it
+  after typecheck)
+- A duplicate signup email returns 409, detected by catching Prisma's unique-constraint
+  error (`P2002`) rather than checking first, which would race with a parallel signup
 
 ### Phase 3: Core quiz loop (Tagalog → English)
 
@@ -349,7 +353,7 @@ sentence building (word tiles), matching pairs.
 
 ## Next step
 
-Phase 1 is done (clean-clone test passed 2026-11-10). Phase 2, steps 2.1–2.2: shared
-signup/login schemas, then the password hashing helper with Vitest set up for the first unit
-tests. Choosing a direction is deferred
+Phase 2, step 2.3: `POST /api/auth/signup` in an auth router, returning the new user
+(never the password hash) with 201, 400 for invalid input and 409 for a taken email. Signup
+starts logging the user in once JWT cookies exist in 2.4. Choosing a direction is deferred
 to Phase 6; until then, questions are asked Tagalog → English.

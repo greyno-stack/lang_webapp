@@ -1,5 +1,6 @@
 import express from 'express';
 import { prisma } from './db.js';
+import { authRouter } from './auth/routes';
 import {
   questionListQuerySchema,
   type HealthResponse,
@@ -10,6 +11,8 @@ import {
 export function createApp() {
   const app = express();
   app.use(express.json());
+
+  app.use('/api/auth', authRouter);
 
   app.get('/api/health', async (_req, res) => {
     let database: HealthResponse['database'] = 'up';
