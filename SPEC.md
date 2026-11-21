@@ -251,8 +251,8 @@ Decisions made:
 
 - [x] 2.1 Shared Zod schemas: signup and login request bodies
 - [x] 2.2 Password hashing helper (bcrypt) + unit tests (Vitest set up here)
-- [ ] 2.3 `POST /api/auth/signup`: validate, hash, create user
-- [ ] 2.4 `POST /api/auth/login`: verify password, set JWT in an httpOnly cookie
+- [x] 2.3 `POST /api/auth/signup`: validate, hash, create user
+- [x] 2.4 `POST /api/auth/login`: verify password, set JWT in an httpOnly cookie
 - [ ] 2.5 Auth middleware: read the cookie, verify the JWT, attach the user to the request
 - [ ] 2.6 `GET /api/me` and `POST /api/auth/logout`
 - [ ] 2.7 Role middleware (`requireRole('ADMIN')`)
@@ -275,6 +275,12 @@ Decisions made:
   after typecheck)
 - A duplicate signup email returns 409, detected by catching Prisma's unique-constraint
   error (`P2002`) rather than checking first, which would race with a parallel signup
+- Sessions are a JWT (`sub` = user ID, plus `role`) signed with `JWT_SECRET`, expiring after
+  7 days, in an httpOnly `SameSite=Lax` cookie named `token` (`Secure` in production)
+- Failed logins return 401 "Invalid email or password" whether the email exists or not, so
+  the endpoint can't be used to find out who has an account
+- ESLint's `no-unused-vars` uses `ignoreRestSiblings`, so `const { passwordHash, ...user }`
+  can drop a field without a lint error
 
 ### Phase 3: Core quiz loop (Tagalog → English)
 
@@ -353,7 +359,7 @@ sentence building (word tiles), matching pairs.
 
 ## Next step
 
-Phase 2, step 2.3: `POST /api/auth/signup` in an auth router, returning the new user
-(never the password hash) with 201, 400 for invalid input and 409 for a taken email. Signup
-starts logging the user in once JWT cookies exist in 2.4. Choosing a direction is deferred
+Phase 2, step 2.5: auth middleware that reads the `token` cookie, verifies the JWT and
+attaches the user to the request (401 when missing or invalid). Choosing a direction is
+deferred
 to Phase 6; until then, questions are asked Tagalog → English.

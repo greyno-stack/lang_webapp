@@ -33,3 +33,6 @@ export const signupResponseSchema = z.object({
 
 export type PublicUser = z.infer<typeof publicUserSchema>;
 export type SignupResponse = z.infer<typeof signupResponseSchema>;
+
+export const loginResponseSchema = signupResponseSchema;
+export type LoginResponse = z.infer<typeof loginResponseSchema>;
