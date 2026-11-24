@@ -6,11 +6,13 @@ import {
   type HealthResponse,
   type QuestionListResponse,
 } from '@app/shared';
+import cookieParser from 'cookie-parser';
 
 // Building the app separately from listen() lets tests import it without opening a port.
 export function createApp() {
   const app = express();
   app.use(express.json());
+  app.use(cookieParser());
 
   app.use('/api/auth', authRouter);
 
